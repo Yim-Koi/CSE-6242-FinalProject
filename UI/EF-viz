@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<script>
+
+    // set the dimensions and margins of the graph
+    var margin = {top: 10, right: 30, bottom: 30, left: 60},
+        width = 1060 - margin.left - margin.right,
+        height = 1000 - margin.top - margin.bottom;
+    
+    // append the svg object to the body of the page
+    var svg = d3.select("#my_dataviz")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+     
+
+    var tooltip = d3.select("#my_dataviz")
+        .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "black")
+            .style("border-radius", "5px")
+            .style("padding", "10px")
+            .style("color", "white")
+    
+    var showTooltip = function(d) {
+        tooltip
+            .transition()
+            .duration(200)
+        tooltip
+            .style("opacity", 1)
+            .html("Returns: " + d.Returns + "<br>  Volatility: " + d.Volatility)
+            .style("left", (d3.mouse(this)[0]+30) + "px")
+            .style("top", (d3.mouse(this)[1]+30) + "px")
+    }
+    
+    //Read the data
+    d3.csv("EF.csv", function(data) {
+    
+        // Add X axis
+        var x = d3.scaleLinear()
+            .domain(d3.extent(data, d => d.Volatility))
+            .range([ 0, width ]);
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+        
+        // Add Y axis
+        var y = d3.scaleLinear()
+            .domain(d3.extent(data, d => d.Returns))
+            .range([ height, 0]);
+        svg.append("g")
+            .call(d3.axisLeft(y));
+
+        // Add a scale for bubble size
+        var z = d3.scaleSqrt()
+            .domain(d3.extent(data, d => d.Returns))
+            .range([1, 10]);
+
+        // Prepare a color palette
+        var color = d3.scaleLinear()
+            .domain(d3.extent(data, d => d.Volatility)) // Points per square pixel.
+            .range(["#fcf2f4", "#d6022d"])
+        
+        // Add dots
+        svg.append('g')
+            .selectAll("dot")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("cx", function (d) { return x(d.Volatility); } )
+            .attr("cy", function (d) { return y(d.Returns); } )
+            .attr("r", function (d) { return z(d.Returns); } )
+            .attr("fill", function(d) { return color(d.Volatility); })
+            //.style("fill", "#69b3a2")
+            .on("mouseover", showTooltip )
+    
+    })
+    
+    </script>
